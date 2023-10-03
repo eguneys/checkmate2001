@@ -1,3 +1,8 @@
+* {
+  padding: 0;
+  margin: 0;
+}
+
 checkmate2001 {
   display: flex;
   flex-flow: row nowrap;
@@ -16,7 +21,57 @@ section.four {
 }
 
 
-section.four > ul {
+section.four .poss-wrap {
   flex: 1;
+  overflow-y: scroll;
+  max-height: 300px;
+}
+
+section.four .poss-wrap > ul {
   background: #cacacc;
+}
+
+section.four .poss-wrap > ul > li {
+  list-style: none;
+  max-width: 100%;
+  word-wrap: break-word;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.1s;
+}
+
+section.four .poss-wrap > ul > li:nth-child(even) {
+  background: #cac;
+}
+
+section.four .poss-wrap > ul > li:hover {
+  background: #ffffcc;
+}
+
+section.four .poss-wrap > ul > li:active {
+  background: #ffcccc;
+}
+
+section.four .poss-wrap > ul > li.selected {
+  background: #aaffcc;
+}
+
+
+::-webkit-scrollbar {
+  width: 12px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+}
+
+
+
+li.pz {
+  display: flex;
+}
+
+li.pz > ul {
+  list-style: none;
+  font-size: 0.7em;
 }
