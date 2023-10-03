@@ -1,0 +1,22 @@
+checkmate2001 {
+  display: flex;
+  flex-flow: row nowrap;
+  gap: 0.2em;
+}
+
+checkmate2001 > section {
+  flex: 1 auto;
+  border: 1px solid black;
+  padding: 0.2em;
+}
+
+section.four {
+  display: flex;
+  flex-flow: column;
+}
+
+
+section.four > ul {
+  flex: 1;
+  background: #cacacc;
+}

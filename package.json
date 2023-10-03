@@ -1,0 +1,20 @@
+{
+  "name": "checkmate2001",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port=3000",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "pichess24": "link:../pichess24/pkg",
+    "shess": "link:../shess"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.2",
+    "vite": "^4.4.5",
+    "vite-plugin-wasm": "^3.2.2"
+  }
+}
