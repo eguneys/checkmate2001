@@ -5,6 +5,7 @@ import { hello } from 'pichess24'
 import { INITIAL_FEN, Shess } from 'shess'
 
 type Pz = {
+  i: number,
   id: string,
   fen: string,
   blunder: string,
@@ -14,6 +15,7 @@ type Pz = {
 }
 
 const parse_tenk = (tenk: string) => {
+  let i = 0;
   return tenk.trim().split('\n').map(line => {
     let xx = line.split(',')
     let [id, fen, mmoves, _x, _y, _z, _w, tags] = xx
@@ -21,7 +23,9 @@ const parse_tenk = (tenk: string) => {
     let blunder = mmoves.split(' ').slice(0, 1)[0]
     let moves = mmoves.split(' ').slice(1)
 
+    i++;
     return {
+      i,
       id,
       fen,
       blunder,
@@ -41,7 +45,7 @@ const load_tenk = async () => {
 
 
 class TTextInput {
-  static init = (txt: string) => {
+  static init = (txt: string, on_input: (_: string) => void) => {
 
     let bte = document.createElement('input')
 
@@ -49,6 +53,9 @@ class TTextInput {
       bte.value = txt
     }
 
+    bte.addEventListener('input', debounce(ev => {
+      on_input((ev.target as HTMLInputElement).value)
+    }, 100))
 
     bte.placeholder = txt;
     return new TTextInput(bte, on_update)
@@ -144,12 +151,14 @@ class PossListItem {
     let el = document.createElement('li')
     el.classList.add('pz')
 
-    let sp_id = TA.init(pz.id, `https://lichess.org/training/${pz.id}`)
+    let sp_id = TA.init(`${pz.i}`, `https://lichess.org/training/${pz.id}`)
 
     el.appendChild(sp_id.el)
 
+    let tags_wrap = document.createElement('div')
     let ul_tags = document.createElement('ul')
-    el.appendChild(ul_tags)
+    el.appendChild(tags_wrap)
+    tags_wrap.appendChild(ul_tags)
 
     let tags = pz.tags.split(' ')
     tags.forEach(tag => {
@@ -158,17 +167,18 @@ class PossListItem {
       ul_tags.appendChild(li)
     })
 
+    const on_selected = (v: boolean) => {
+      if (v) {
+        el.classList.add('selected')
+      } else {
+        el.classList.remove('selected')
+      }
+    }
 
-
-    PossList.push({
-      el
-    })
-
+    return new PossListItem(el, pz, on_selected)
   }
-}
 
-type PossCb = {
-  el: HTMLLIElement
+  constructor(readonly el: HTMLLIElement, readonly pz: Pz, readonly on_selected: (v: boolean) => void) {}
 }
 
 class PossListManager {
@@ -187,39 +197,98 @@ class PossListManager {
 
     let res = new PossListManager(els_wrap, els)
 
-    els_wrap.addEventListener('scroll', throttle(res.on_scroll, 800))
+    els_wrap.addEventListener('scroll', debounce(res.on_scroll, 200))
 
     return res
   }
 
-  ps: PossCb[] = []
+  _ps: Pz[] = []
 
+  get ps() {
+    return this._ps
+    .filter(x => this.y_filter.every(y => x.tags.split(' ').includes(y)))
+    .filter(x => this.n_filter.every(n => !x.tags.split(' ').includes(n)))
+  }
 
-  private _visible: PossCb[] = []
+  private _filter: string = ''
 
-  private _scroll_top = 0
-  private _i_top = 0
+  set filter(_: string) {
+    this._filter = _
 
-  on_scroll = () => {
-    let scroll_top = this.el.scrollTop
-    let _visible_height = this.el.clientHeight
-
-    let d_scroll = scroll_top - this._scroll_top
-
-    this._scroll_top = scroll_top
-
-    if (d_scroll < 0) {
-      // console.log('up', d_scroll)
-    } else if (d_scroll > 0) {
-      // console.log('down', d_scroll)
-    }
-
+    this.on_scroll()
 
   }
 
-  push(cb: PossCb) {
-    this.ps.push(cb)
-    this.ul.appendChild(cb.el)
+
+  get y_filter() {
+    let [y_filter] = this._filter.split('_!_')
+
+    if (!y_filter) {
+      return []
+    }
+
+    return y_filter.trim().split(' ')
+    .filter(x => x !== '')
+    .map(x => x.trim())
+  }
+  get n_filter() {
+    let [_, n_filter] = this._filter.split('_!_')
+
+    if (!n_filter) {
+      return []
+    }
+
+    return n_filter.trim().split(' ')
+    .filter(x => x !== '')
+    .map(x => x.trim())
+  }
+
+  private _visible: Map<number, PossListItem> = new Map()
+
+  private _selected_index: number = 0
+
+  on_scroll = () => {
+    const find_index = (n: number) => Math.floor(n / 100)
+    let scroll_top = this.el.scrollTop
+
+    //10000 500
+    // 1000 100
+    // 250  30
+    let n = Math.floor(this.ps.length / 30)
+
+    let i_begin = Math.max(0, find_index(scroll_top) - n)
+    let i_end = Math.min(this.ps.length, i_begin + n * 3)
+
+    this.ul.style.transform = `translateY(${i_begin * 100}px)`
+
+    this.ul.innerHTML = ''
+    this._visible.clear()
+
+    for (let i = i_begin; i < i_end; i++) {
+      let pi = PossListItem.init(this.ps[i])
+      pi.el.addEventListener('click', () => {
+        this._selected_index = i
+
+      ;[...this._visible.entries()]
+      .forEach(([i, v]) => v.on_selected(i === this._selected_index))
+      })
+
+      ;[...this._visible.entries()]
+      .forEach(([i, v]) => v.on_selected(i === this._selected_index))
+
+      this.ul.appendChild(pi.el)
+      this._visible.set(i, pi)
+    }
+
+  }
+
+
+  push(pz: Pz) {
+    this._ps.push(pz)
+  }
+
+  init() {
+    this.on_scroll()
   }
 
   constructor(readonly el: HTMLElement, readonly ul: HTMLUListElement) {}
@@ -260,22 +329,29 @@ class Template {
 
 
 
-    let sp_label = TTextInput.init('Filter Position yes_filter _!_ no_filter')
-    sect4.appendChild(sp_label.el)
-
     let nb_poss_label = TLabel.init('8/10000')
+
+    let sp_label = TTextInput.init('Filter Position yes_filter _!_ no_filter', value => {
+      PossList.filter = value
+      nb_poss_label.on_update(`${PossList.ps.length}/${PossList._ps.length}`)
+    })
+    sect4.appendChild(sp_label.el)
     sect4.appendChild(nb_poss_label.el)
+
     let poss_label = TLabel.init('Positions')
     sect4.appendChild(poss_label.el)
 
     sect4.appendChild(PossList.el)
 
+    const on_init = () => {
+      nb_poss_label.on_update(`${PossList.ps.length}/${PossList._ps.length}`)
+    }
 
-    return new Template(el)
+    return new Template(el, on_init)
 
   }
 
-  constructor(readonly el: HTMLElement) {}
+  constructor(readonly el: HTMLElement, readonly on_init: () => void) {}
 }
 
 
@@ -287,7 +363,9 @@ class Checkmate2001 {
 
     load_tenk()
     .then(kk => {
-      kk.slice(0, 200).forEach(k => PossListItem.init(k))
+      kk.forEach(k => PossList.push(k))
+      PossList.init()
+      tt.on_init()
     })
 
 
@@ -322,6 +400,15 @@ class CButtonsManager {
 const CButtons = new CButtonsManager()
 const PossList = PossListManager.init()
 
+function debounce(func: (...args: any[]) => void, wait: number) {
+  let t_id: number;
+  return (...args: any[]) => {
+    window.clearTimeout(t_id)
+    t_id = setTimeout(() => {
+      func(...args)
+    }, wait)
+  }
+}
 
 function throttle(func: (...args: any[]) => void, delay: number) {
   let lastCallTime = 0;

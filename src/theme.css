@@ -41,7 +41,7 @@ section.four .poss-wrap > ul > li {
 }
 
 section.four .poss-wrap > ul > li:nth-child(even) {
-  background: #cac;
+  background: silver;
 }
 
 section.four .poss-wrap > ul > li:hover {
@@ -49,11 +49,11 @@ section.four .poss-wrap > ul > li:hover {
 }
 
 section.four .poss-wrap > ul > li:active {
-  background: #ffcccc;
+  background: lightseagreen;
 }
 
 section.four .poss-wrap > ul > li.selected {
-  background: #aaffcc;
+  background: gold;
 }
 
 
@@ -69,9 +69,18 @@ section.four .poss-wrap > ul > li.selected {
 
 li.pz {
   display: flex;
+  height: 100px;
+  border: 1px solid darkblue;
 }
 
-li.pz > ul {
+li.pz > div {
+
+  display: flex;
+  overflow-y: scroll;
+  padding: 0 0.5em;
+}
+
+li.pz > div > ul {
   list-style: none;
   font-size: 0.7em;
 }
