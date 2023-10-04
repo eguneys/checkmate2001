@@ -1,7 +1,7 @@
 import './style.css'
 import './theme.css'
 
-import { hello } from 'pichess24'
+import { play_tuples } from 'pichess24'
 import { INITIAL_FEN, Shess } from 'shess'
 
 type Pz = {
@@ -43,6 +43,31 @@ const load_tenk = async () => {
   return parse_tenk(res)
 }
 
+class TTextArea {
+  static init = (txt: string, on_input: (_: string) => void) => {
+
+    let bte = document.createElement('textarea')
+
+    bte.rows = 3
+    bte.cols = 6
+    bte.maxLength = 3 * 6
+
+    const on_update = (txt: string) => {
+      bte.value = txt
+    }
+
+    bte.addEventListener('input', debounce(ev => {
+      on_input((ev.target as HTMLInputElement).value)
+    }, 100))
+
+    bte.placeholder = txt;
+    return new TTextArea(bte, on_update)
+  }
+
+  constructor(readonly el: HTMLTextAreaElement, readonly on_update: (_: string) => void) {}
+}
+
+
 
 class TTextInput {
   static init = (txt: string, on_input: (_: string) => void) => {
@@ -81,7 +106,7 @@ class TA {
 
 
 
-class TSpan {
+export class TSpan {
   static init = (txt: string) => {
 
     let bte = document.createElement('span')
@@ -131,6 +156,27 @@ class TButton {
       on_click()
     })
 
+    return new TButton(bte)
+
+  }
+
+  constructor(readonly el: HTMLButtonElement) {}
+}
+
+
+
+
+class CButton {
+  static init = (txt: string, on_click: () => void) => {
+
+    let bte = document.createElement('button')
+
+    bte.textContent = txt
+
+    bte.addEventListener('click', () => {
+      on_click()
+    })
+
     let bcb: ButtonCb;
     
     const _on_init = () => {
@@ -146,7 +192,7 @@ class TButton {
 }
 
 class PossListItem {
-  static init = (pz: Pz) => {
+  static init = (pz: Pz, on_selected: () => void) => {
 
     let el = document.createElement('li')
     el.classList.add('pz')
@@ -167,7 +213,7 @@ class PossListItem {
       ul_tags.appendChild(li)
     })
 
-    const on_selected = (v: boolean) => {
+    const _on_selected = (v: boolean) => {
       if (v) {
         el.classList.add('selected')
       } else {
@@ -175,7 +221,12 @@ class PossListItem {
       }
     }
 
-    return new PossListItem(el, pz, on_selected)
+
+    let b_select = TButton.init('select', on_selected)
+
+    el.appendChild(b_select.el)
+
+    return new PossListItem(el, pz, _on_selected)
   }
 
   constructor(readonly el: HTMLLIElement, readonly pz: Pz, readonly on_selected: (v: boolean) => void) {}
@@ -265,9 +316,10 @@ class PossListManager {
     this._visible.clear()
 
     for (let i = i_begin; i < i_end; i++) {
-      let pi = PossListItem.init(this.ps[i])
-      pi.el.addEventListener('click', () => {
+      let pi = PossListItem.init(this.ps[i], () => {
         this._selected_index = i
+
+        this.on_selected?.(pi.pz)
 
       ;[...this._visible.entries()]
       .forEach(([i, v]) => v.on_selected(i === this._selected_index))
@@ -282,6 +334,7 @@ class PossListManager {
 
   }
 
+  on_selected?: (pz: Pz) => void
 
   push(pz: Pz) {
     this._ps.push(pz)
@@ -294,38 +347,81 @@ class PossListManager {
   constructor(readonly el: HTMLElement, readonly ul: HTMLUListElement) {}
 }
 
+
+class Section3 {
+  static init = () => {
+
+    let el = document.createElement('section3')
+
+    let e_select = TLabel.init('Select Pattern')
+    el.appendChild(e_select.el)
+
+    let e_name = TTextInput.init('Pttrn Name', (name: string) => {
+
+    })
+
+    el.appendChild(e_name.el)
+
+    let e_pttrn = TTextArea.init('PcRaRr\nRaRrRr\nOoOoOo', (pttrn: string) => {
+      console.log(pttrn)
+    })
+
+    el.appendChild(e_pttrn.el)
+
+    let e_apply = TButton.init('Apply Pattern', () => {
+
+    })
+    el.appendChild(e_apply.el)
+
+    return new Section3(el)
+  }
+
+
+  constructor(readonly el: HTMLElement) {}
+}
+
 class Template {
 
   static init = () => {
      
     let el = document.createElement('checkmate2001')
 
-    let sect2 = document.createElement('section')
-    let sect3 = document.createElement('section')
-    let sect4 = document.createElement('section')
+    let e_sect2 = document.createElement('section')
+    let e_sect3 = document.createElement('section')
+    let e_sect4 = document.createElement('section')
 
-    sect2.classList.add('two')
-    sect3.classList.add('three')
-    sect4.classList.add('four')
+    e_sect2.classList.add('two')
+    e_sect3.classList.add('three')
+    e_sect4.classList.add('four')
 
-    el.appendChild(sect3)
-    el.appendChild(sect4)
-    el.appendChild(sect2)
+    el.appendChild(e_sect3)
+    el.appendChild(e_sect4)
+    el.appendChild(e_sect2)
 
+    let sect3 = Section3.init()
+    e_sect3.appendChild(sect3.el)
 
 
     let { cbs } = CButtons
-    sect2.appendChild(cbs)
+    e_sect2.appendChild(cbs)
 
     let ss = Shess.init()
-    sect2.appendChild(ss.el)
+    e_sect2.appendChild(ss.el)
   
     ss.fen(INITIAL_FEN)
+    PossList.on_selected = pz => {
+      let fen = play_tuples(pz.fen, pz.blunder + ' ' + pz.moves.join(' '))
+      if (!fen) {
+
+        throw "No fen on pz" + pz
+      }
+      ss.fen(fen)
+    }
 
     
-    TButton.init('init', () => { ss.fen(INITIAL_FEN) })
-    TButton.init('flp brd', () => { ss.flip() })
-    TButton.init('flp color', () => {})
+    CButton.init('init', () => { ss.fen(INITIAL_FEN) })
+    CButton.init('flp brd', () => { ss.flip() })
+    CButton.init('flp color', () => {})
 
 
 
@@ -335,13 +431,13 @@ class Template {
       PossList.filter = value
       nb_poss_label.on_update(`${PossList.ps.length}/${PossList._ps.length}`)
     })
-    sect4.appendChild(sp_label.el)
-    sect4.appendChild(nb_poss_label.el)
+    e_sect4.appendChild(sp_label.el)
+    e_sect4.appendChild(nb_poss_label.el)
 
     let poss_label = TLabel.init('Positions')
-    sect4.appendChild(poss_label.el)
+    e_sect4.appendChild(poss_label.el)
 
-    sect4.appendChild(PossList.el)
+    e_sect4.appendChild(PossList.el)
 
     const on_init = () => {
       nb_poss_label.on_update(`${PossList.ps.length}/${PossList._ps.length}`)
@@ -410,7 +506,7 @@ function debounce(func: (...args: any[]) => void, wait: number) {
   }
 }
 
-function throttle(func: (...args: any[]) => void, delay: number) {
+export function throttle(func: (...args: any[]) => void, delay: number) {
   let lastCallTime = 0;
   
   return function (...args: any[]) {
@@ -428,7 +524,7 @@ function app(el: HTMLElement) {
 
   console.log(el)
 
-  console.log(hello())
+  //console.log(play_tuples(INITIAL_FEN, "e2e4 d7d5"))
 
   let cc = Checkmate2001.init()
 

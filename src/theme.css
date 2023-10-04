@@ -35,8 +35,6 @@ section.four .poss-wrap > ul > li {
   list-style: none;
   max-width: 100%;
   word-wrap: break-word;
-  cursor: pointer;
-  user-select: none;
   transition: background 0.1s;
 }
 
@@ -77,10 +75,24 @@ li.pz > div {
 
   display: flex;
   overflow-y: scroll;
-  padding: 0 0.5em;
 }
 
 li.pz > div > ul {
+  display: flex;
+  flex-flow: column;
   list-style: none;
   font-size: 0.7em;
+}
+
+section3 {
+  display: flex;
+  flex-flow: column;
+  gap: 1em;
+}
+
+section3 textarea {
+  font-size: 2em;
+  overflow: hidden;
+  resize: none;
+  align-self: center;
 }
