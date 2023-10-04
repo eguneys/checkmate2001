@@ -1,3 +1,4 @@
+import { debounce } from './util.ts'
 type Pz = {
   i: number,
   id: string,
@@ -49,7 +50,6 @@ type PatternPz = {
 }
 
 class PzManager {
-
   static init = (pz: Pz[]) => {
 
     let ppz = pz.map(pz => ({ pz, last_fen: pz_last_fen(pz), tags: [], builtin_tags: pz.tags.split(' ') }))
@@ -90,6 +90,7 @@ class PzManager {
   filtered_pzs: PatternPz[] = []
 
   fpz_updates: (() => void) [] = []
+  f_updates: (() => void)[] = []
 
   pull_nb = (cb: (_: string) => void) => {
     let cb2 = () => {
@@ -98,6 +99,21 @@ class PzManager {
     cb2()
     this.fpz_updates.push(cb2)
   }
+
+
+  pull_filter(cb: (_: string) => void) {
+    let cb2 = () => {
+      cb(this.filter)
+    }
+    cb2()
+    this.f_updates.push(cb2)
+  }
+
+  push_filter(_: string) {
+    this.filter = _
+    this.run_fpz_updates()
+  }
+
 
 }
 
@@ -125,6 +141,24 @@ class _StateManager {
     this.pz_updates.push(cb2)
   }
 
+
+  pull_pz_filter = (cb: (_: string) => void) => {
+    let cb2 = () => {
+      if (this.pz) {
+        this.pz.pull_filter(cb)
+      } else {
+        cb('')
+      }
+    }
+    cb2()
+    this.pz_updates.push(cb2)
+  }
+
+  push_pz_filter = (_: string) => {
+    if (this.pz) {
+      this.pz.push_filter(_)
+    }
+  }
 }
 
 
@@ -154,14 +188,14 @@ class Section3 {
   constructor(readonly el: HTMLElement) {}
 }
 
-type PullT<T> = T | ((on_pull: (_: T) => void) => void);
+type PullT<T> = ((on_pull: (_: T) => void) => void);
 
 class TText {
-  static init = (txt: PullT<string>) => {
+  static init = (txt: string | PullT<string>) => {
 
     let el = document.createTextNode('')
 
-    if (typeof txt == 'string') {
+    if (typeof txt === 'string') {
       el.textContent = txt
     } else {
       txt(on_update)
@@ -177,11 +211,37 @@ class TText {
   constructor(readonly el: Text) {}
 }
 
+class TTInput {
+
+  static init = (placeholder: string, txt: PullT<string>, push: (_: string) => void) => {
+    let el = document.createElement('input')
+
+    el.placeholder = placeholder
+
+    txt(on_update)
+
+    function on_update(txt: string) {
+      el.textContent = txt
+    }
+
+    el.addEventListener('input', debounce((_) => {
+      console.log(el.value)
+      push(el.value)
+    }, 200))
+
+    return new TTInput(el)
+  }
+
+  constructor(readonly el: HTMLInputElement) {}
+}
+
 class Section4 {
 
   static init = () => {
     let el = document.createElement('section4')
 
+    let filter = TTInput.init('Filter y_filter _!_ n_filter', State.pull_pz_filter, State.push_pz_filter)
+    el.appendChild(filter.el)
 
     let nb_pizzas = TText.init(State.pull_pz_nb)
     let positions = TText.init('Positions')
