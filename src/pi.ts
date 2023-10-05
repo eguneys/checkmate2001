@@ -1,9 +1,11 @@
 import Worker from './piworker.ts?worker'
 
+export type NbTotal = { nb: number, total: number }
+
 export type FenMoves = { fen: string, moves: string }
 export type FenPattern = { fen: string, pattern: string }
 
-type WorkerCb = { id: string, result: string }
+type WorkerCb = { id: string, result: string[] }
 
 let i = 1
 const gen_id = () => `wm_${i++}`
@@ -12,7 +14,7 @@ class _Pi {
 
   w: Worker = new Worker()
 
-  cbs: { id: string, cb: (_: string) => void } [] = []
+  cbs: { id: string, cb: (_: string[]) => void } [] = []
 
   constructor() {
 
@@ -29,36 +31,46 @@ class _Pi {
 
   private nb_queue_updates: (() => void)[] = []
 
-  pull_nb_queue(cb: (_:number) => void) {
-    this.nb_queue_updates.push(() => cb(this.cbs.length))
+  pull_nb_queue = (cb: (_: NbTotal) => void) => {
+    let total = 0
+    let p_cbs = 0
+
+    this.nb_queue_updates.push(() => {
+      if (p_cbs < this.cbs.length) {
+        total = this.cbs.length
+      }
+      p_cbs = this.cbs.length
+      cb({ nb: this.cbs.length, total})
+    })
   }
 
-  private one_pull_pz_play_tuples(cb: (_: string) => void, fen_moves: FenMoves | FenPattern) {
+  private one_pull_fen_moves_or_patterns(cb: (_: string[]) => void, fen_moves?: FenMoves[], fen_patterns?: FenPattern[]) {
     let id = gen_id()
 
     this.cbs.push({ id, cb })
     this.w.postMessage({
       id,
       fen_moves,
+      fen_patterns
     })
 
     this.nb_queue_updates.forEach(_ => _())
   }
 
-  async pz_last_fen(fen: string, moves: string): Promise<string | undefined> {
+  async batch_pz_last_fen(fen_moves: FenMoves[]): Promise<string[]> {
     return new Promise(resolve => 
-      this.one_pull_pz_play_tuples((last_fen: string | undefined) => {
-        resolve(last_fen)
-      }, { fen, moves })
+      this.one_pull_fen_moves_or_patterns((last_fens: string[]) => {
+        resolve(last_fens)
+      }, fen_moves)
     )
   }
 
 
-  async match_mate_pattern(fen: string, pattern: string): Promise<boolean> {
+  async batch_match_mate_pattern(fen_pattern: FenPattern[]): Promise<boolean[]> {
     return new Promise(resolve => 
-      this.one_pull_pz_play_tuples((matched: string) => {
-        resolve(matched === 'true')
-      }, { fen, pattern })
+      this.one_pull_fen_moves_or_patterns((matched: string[]) => {
+        resolve(matched.map(_ => _ === 'true'))
+      }, undefined, fen_pattern)
     )
   }
 

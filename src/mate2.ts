@@ -1,7 +1,17 @@
 import { INITIAL_FEN, Shess } from 'shess'
 import { debounce } from './util.ts'
 
-import Pi from './pi.ts'
+import Pi, { FenPattern } from './pi.ts'
+
+const pull_map = <T, X>(pull: PullT<T>, map: (_: T) => X): PullT<X> => {
+
+  return cb => {
+    pull(t => {
+      cb(map(t))
+    })
+  }
+
+}
 
 const default_patterns: Pattern[] = [
   ['back', 'OoOoOoRnRnRnpopopo'],
@@ -17,10 +27,12 @@ type Pz = {
   tags: string
 }
 
-const cache_match_mate_pattern: { [key: string]: boolean } = {}
-
-const pz_last_fen = async (pz: Pz): Promise<string | undefined> => Pi.pz_last_fen(pz.fen, pz.blunder + ' ' + pz.moves.join(' '))
-const match_mate_pattern = async (fen: string, patt: string) => cache_match_mate_pattern[fen+patt] ?? Pi.match_mate_pattern(fen, patt).then(res => (cache_match_mate_pattern[fen+patt] = res))
+const pzz_last_fen = async (pzz: Pz[]): Promise<(string | undefined) []> => {
+  let res = await Pi.batch_pz_last_fen(pzz.map(pz => ({ fen: pz.fen, moves: pz.blunder + ' ' + pz.moves.join(' ')})))
+  return res.map(_ => _ === 'undefined' ? undefined : _)
+}
+const batch_match_mate_pattern = async (fen_pattern: FenPattern[]) =>
+  Pi.batch_match_mate_pattern(fen_pattern)
 
 const parse_tenk = (tenk: string) => {
   let i = 0;
@@ -63,7 +75,7 @@ class PzManager {
   
   static init = async (piz: Pz[]) => {
 
-    let ppz = await Promise.all(piz.map(pz => pz_last_fen(pz)))
+    let ppz = await pzz_last_fen(piz)
 
     let res: PatternPz[] = []
 
@@ -80,16 +92,23 @@ class PzManager {
     this.run_fpz_updates()
   }
 
+  async apply_patterns(pttrns: Pattern[]) {
+    pttrns.forEach(pttrn => this._apply_pattern_single(pttrn[0], pttrn[1]))
 
-  private async _apply_pattern(name: string, pattern: string) {
+    this.run_fpz_updates()
+  }
+
+  private async _apply_pattern_single(name: string, pattern: string) {
     pattern = [pattern.substring(0, 6), pattern.substring(6, 12), pattern.substring(12, 18)].join('\n')
-    await Promise.all(this.pattern_pzs.map(async ppz => {
-      if (await match_mate_pattern(ppz.last_fen, pattern)) {
+    let res = await batch_match_mate_pattern(
+      this.pattern_pzs.map(ppz => ({ fen: ppz.last_fen, pattern })))
+
+    this.pattern_pzs.forEach((ppz, i) => {
+      if (res[i]) {
         ppz.tags = ppz.tags.filter(_ => _ !== name)
         ppz.tags.push(name)
       }
-    }))
-    this.run_fpz_updates()
+    })
   }
 
   run_fpz_updates() {
@@ -162,28 +181,6 @@ class PzManager {
     this.selected_pz_updates.forEach(_ => _())
   }
 
-  pattern_name: string = ''
-  pattern: string = ''
-
-
-  apply_pattern() {
-    if (this.pattern_name.length > 2 && this.pattern.length === 18) {
-      this._apply_pattern(this.pattern_name, this.pattern)
-    }
-  }
-
-  push_pttrn(pattern: string) {
-    this.pattern = pattern;
-  }
-  pull_pttrn_name(_cb: (name: string) => void) {
-  }
-  push_pttrn_name(name: string) {
-    this.pattern_name = name;
-  }
-  pull_pttrn(_cb: (name: string) => void) {
-  }
- 
-  
 }
 
 
@@ -267,6 +264,14 @@ class _StateManager {
   async load() {
     this.pz = await PzManager.init(await load_tenk())
     this.pz_updates.forEach(_ => _())
+
+
+    this.pt.pull_pttrn_list(pttrns => {
+      if (this.pz) {
+        this.pz.apply_patterns(pttrns)
+      }
+    })
+
   }
 
 
@@ -826,6 +831,13 @@ export default class Checkmate2002 {
     ss2.classList.add('two')
     ss3.classList.add('three')
     ss4.classList.add('four')
+
+
+    let e_not = document.createElement('div')
+    el.appendChild(e_not)
+
+    let e_s = TSpan.init(pull_map(Pi.pull_nb_queue, ({nb, total}) => `${nb}/${total}`))
+    e_not.appendChild(e_s.el)
 
     return new Checkmate2002(el)
   }
