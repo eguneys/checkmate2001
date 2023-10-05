@@ -179,8 +179,68 @@ class PzManager {
   
 }
 
+
+class PttrnManager {
+  add_pattern() {
+    if (this.curr_pttrn_name.length > 2) {
+      if (this.curr_pttrn.length == 18) {
+        this.add_given_pttrn([this.curr_pttrn_name, this.curr_pttrn])
+      }
+    }
+    this.curr_pttrn_updates.forEach(_ => _())
+  }
+
+  curr_pttrn_name: string = ''
+  curr_pttrn: string = ''
+
+  pttrn_list: Pattern[] = []
+
+  pttrn_list_updates: (() => void) [] = []
+  curr_pttrn_updates: (() => void) [] = []
+
+  pull_curr_pttrn_pttrn = (cb: (_: string) => void) => {
+    this.pull_curr_pttrn((_: Pattern) => cb(_[1]))
+  }
+  pull_curr_pttrn_name = (cb: (_: string) => void) => {
+    this.pull_curr_pttrn((_: Pattern) => cb(_[0]))
+  }
+
+  push_pttrn_name = (name: string) => {
+    this.curr_pttrn_name = name
+    this.curr_pttrn_updates.forEach(_ => _())
+  }
+
+  push_pttrn_pttrn = (pttrn: string) => {
+    this.curr_pttrn = pttrn
+    this.curr_pttrn_updates.forEach(_ => _())
+  }
+
+  pull_curr_pttrn = (cb: (_: Pattern) => void) => {
+    let cb2 = () => {
+      cb([this.curr_pttrn_name, this.curr_pttrn])
+    }
+    cb2()
+    this.curr_pttrn_updates.push(cb2)
+  }
+
+  pull_pttrn_list = (cb: (_: Pattern[]) => void) => {
+    let cb2 = () => {
+      cb(this.pttrn_list)
+    }
+    cb2()
+    this.pttrn_list_updates.push(cb2)
+  }
+
+  private add_given_pttrn = (pttrn: Pattern) => {
+    this.pttrn_list = this.pttrn_list.filter(_ => _[0] != pttrn[0])
+    this.pttrn_list.push(pttrn)
+    this.pttrn_list_updates.forEach(_ => _())
+  }
+}
+
 class _StateManager {
-    
+  pt: PttrnManager = new PttrnManager()
+
   pz?: PzManager
 
   pz_updates: (() => void)[] = []
@@ -251,52 +311,6 @@ class _StateManager {
     cb2()
     this.pz_updates.push(cb2)
   }
-
-  pull_pttrn_name = (cb: (name: string) => void) => {
-    let cb2 = () => {
-      if (this.pz) {
-        this.pz.pull_pttrn_name(cb)
-      } else {
-        //cb([])
-      }
-    }
-    cb2()
-    this.pz_updates.push(cb2)
-
-  }
-
-  push_pttrn_name = (name: string) => {
-    if (this.pz) {
-      this.pz.push_pttrn_name(name)
-    }
-  }
-
-  pull_pttrn = (cb: (name: string) => void) => {
-    let cb2 = () => {
-      if (this.pz) {
-        this.pz.pull_pttrn(cb)
-      } else {
-        //cb([])
-      }
-    }
-    cb2()
-    this.pz_updates.push(cb2)
-  }
-
-  push_pttrn = (name: string) => {
-    if (this.pz) {
-      this.pz.push_pttrn(name)
-    }
-  }
-
-  apply_pattern() {
-    if (this.pz) {
-      this.pz.apply_pattern()
-    }
-  }
-  
-
-
 }
 
 
@@ -345,6 +359,22 @@ class Section2 {
   constructor(readonly el: HTMLElement) {}
 }
 
+type Pattern = [string, string]
+
+class TPatternListItem {
+
+  static init = (pt: Pattern) => {
+    let el = document.createElement('div')
+
+    let s_name = TSpan.init(pt[0])
+    el.appendChild(s_name.el)
+
+    return new TPatternListItem(el)
+  }
+
+  constructor(readonly el: HTMLElement) {}
+}
+
 class Section3 {
 
   static init = () => {
@@ -352,20 +382,30 @@ class Section3 {
     let el = document.createElement('section3')
 
 
-    let t_name = TTInput.init('Pttrn Name', State.pull_pttrn_name, State.push_pttrn_name)
+    let t_name = TTInput.init('Pttrn Name', State.pt.pull_curr_pttrn_name, State.pt.push_pttrn_name)
     el.appendChild(t_name.el)
 
-    let t_area = TTArea.init('PcRaRrRaRrRrOoOoOo', State.pull_pttrn, State.push_pttrn)
+    let t_area = TTArea.init('PcRaRrRaRrRrOoOoOo', State.pt.pull_curr_pttrn_pttrn, State.pt.push_pttrn_pttrn)
     t_area.el.rows = 3
     t_area.el.cols = 6
     t_area.el.maxLength = 3 * 6
     el.appendChild(t_area.el)
 
 
-    let t_btn = TButton.init('Apply Pattern', () => {
-      State.apply_pattern()
+    let t_btn = TButton.init('Add Pattern', () => {
+      State.pt.add_pattern()
     })
     el.appendChild(t_btn.el)
+
+
+
+    let p_list = TPageList.init(State.pt.pull_pttrn_list, pttrn => {
+      let _ = TPatternListItem.init(pttrn)
+      return _.el
+    })
+
+    el.appendChild(p_list.el)
+
 
     return new Section3(el)
   }
@@ -426,6 +466,28 @@ class TButton {
   }
 
   constructor(readonly el: HTMLButtonElement) {}
+}
+
+
+class TSpan {
+  static init = (txt: string | PullT<string>) => {
+
+    let el = document.createElement('span')
+
+    if (typeof txt === 'string') {
+      el.textContent = txt
+    } else {
+      txt(on_update)
+    }
+
+    function on_update(txt: string) {
+      el.textContent = txt
+    }
+
+    return new TSpan(el)
+  }
+
+  constructor(readonly el: HTMLSpanElement) {}
 }
 
 
