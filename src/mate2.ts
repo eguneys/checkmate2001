@@ -3,6 +3,8 @@ import { debounce } from './util.ts'
 
 import Pi, { FenPattern } from './pi.ts'
 
+
+
 const pull_map = <T, X>(pull: PullT<T>, map: (_: T) => X): PullT<X> => {
 
   return cb => {
@@ -186,6 +188,12 @@ class PzManager {
 
 class PttrnManager {
 
+  push_pttrn_list(list: Pattern[]) {
+    list.forEach(ptt => {
+      this.add_given_pttrn(ptt)
+    })
+  }
+  
   remove_pttrn(name: string) {
     this.pttrn_list = this.pttrn_list.filter(_ => _[0] != name)
     this.pttrn_list_updates.forEach(_ => _())
@@ -847,5 +855,17 @@ export default class Checkmate2002 {
 
   load_puzzles() {
     State.load()
+
+   let load = localStorage.getItem(`checkmate2002.patterns`)
+
+   if (load) {
+     State.pt.push_pttrn_list(JSON.parse(load))
+   }
+
+   State.pt.pull_pttrn_list(pt => {
+     localStorage.setItem(`checkmate2002.patterns`, JSON.stringify(pt))
+   })
+
+
   }
 }
