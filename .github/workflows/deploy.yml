@@ -33,8 +33,6 @@ jobs:
           git clone git@github.com:eguneys/pichess24.git
           cd pichess24
           wasm-pack build --target bundler
-          cd pkg
-          pnpm link ./
 
       - name: Build Shess
 
@@ -43,12 +41,13 @@ jobs:
           cd shess
           pnpm install
           pnpm build
-          pnpm link .
 
 
       - name: Build
         run: |
           pnpm install
+          pnpm link ../pichess24/pkg
+          pnpm link ../shess
           pnpm build
       
       - name: Deploy
