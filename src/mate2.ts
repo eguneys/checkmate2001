@@ -15,7 +15,7 @@ type Pz = {
 
 // TODO
 const pz_last_fen = (pz: Pz) => play_tuples(pz.fen, pz.blunder + ' ' + pz.moves.join(' '))
-const match_mate_pattern = (fen: string, patt: string) => fen === patt
+const match_mate_pattern = (fen: string, patt: string) => pi_pattern(fen, patt)
 
 const parse_tenk = (tenk: string) => {
   let i = 0;
@@ -54,11 +54,18 @@ type PatternPz = {
 }
 
 class PzManager {
- 
+
   
   static init = (pz: Pz[]) => {
 
-    let ppz = pz.map(pz => ({ pz, last_fen: pz_last_fen(pz), tags: [], builtin_tags: pz.tags.split(' ') }))
+    let ppz = pz.flatMap(pz => {
+      let last_fen = pz_last_fen(pz)
+      if (last_fen) {
+        return { pz, last_fen, tags: [], builtin_tags: pz.tags.split(' ') }
+      } else {
+        return []
+      }
+    })
     return new PzManager(ppz)
   }
 
@@ -67,7 +74,8 @@ class PzManager {
   }
 
 
-  apply_pattern(name: string, pattern: string) {
+  private _apply_pattern(name: string, pattern: string) {
+    pattern = [pattern.substring(0, 6), pattern.substring(6, 12), pattern.substring(12, 18)].join('\n')
     this.pattern_pzs.forEach(ppz => {
       if (match_mate_pattern(ppz.last_fen, pattern)) {
         ppz.tags = ppz.tags.filter(_ => _ !== name)
@@ -146,10 +154,33 @@ class PzManager {
     this.selected_pz = _
     this.selected_pz_updates.forEach(_ => _())
   }
+
+  pattern_name: string = ''
+  pattern: string = ''
+
+
+  apply_pattern() {
+    if (this.pattern_name.length > 2 && this.pattern.length === 18) {
+      this._apply_pattern(this.pattern_name, this.pattern)
+    }
+  }
+
+  push_pttrn(pattern: string) {
+    this.pattern = pattern;
+  }
+  pull_pttrn_name(cb: (name: string) => void) {
+  }
+  push_pttrn_name(name: string) {
+    this.pattern_name = name;
+  }
+  pull_pttrn(cb: (name: string) => void) {
+  }
+ 
   
 }
 
 class _StateManager {
+    
   pz?: PzManager
 
   pz_updates: (() => void)[] = []
@@ -209,7 +240,7 @@ class _StateManager {
     this.pz_updates.push(cb2)
   }
 
-  pull_select_pz(cb: (pz: PatternPz) => void) {
+  pull_select_pz = (cb: (pz: PatternPz) => void) => {
     let cb2 = () => {
       if (this.pz) {
         this.pz.pull_select_pz(cb)
@@ -220,6 +251,50 @@ class _StateManager {
     cb2()
     this.pz_updates.push(cb2)
   }
+
+  pull_pttrn_name = (cb: (name: string) => void) => {
+    let cb2 = () => {
+      if (this.pz) {
+        this.pz.pull_pttrn_name(cb)
+      } else {
+        //cb([])
+      }
+    }
+    cb2()
+    this.pz_updates.push(cb2)
+
+  }
+
+  push_pttrn_name = (name: string) => {
+    if (this.pz) {
+      this.pz.push_pttrn_name(name)
+    }
+  }
+
+  pull_pttrn = (cb: (name: string) => void) => {
+    let cb2 = () => {
+      if (this.pz) {
+        this.pz.pull_pttrn(cb)
+      } else {
+        //cb([])
+      }
+    }
+    cb2()
+    this.pz_updates.push(cb2)
+  }
+
+  push_pttrn = (name: string) => {
+    if (this.pz) {
+      this.pz.push_pttrn(name)
+    }
+  }
+
+  apply_pattern() {
+    if (this.pz) {
+      this.pz.apply_pattern()
+    }
+  }
+  
 
 
 }
@@ -275,6 +350,23 @@ class Section3 {
   static init = () => {
 
     let el = document.createElement('section3')
+
+
+    let t_name = TTInput.init('Pttrn Name', State.pull_pttrn_name, State.push_pttrn_name)
+    el.appendChild(t_name.el)
+
+    let t_area = TTArea.init('PcRaRrRaRrRrOoOoOo', State.pull_pttrn, State.push_pttrn)
+    t_area.el.rows = 3
+    t_area.el.cols = 6
+    t_area.el.maxLength = 3 * 6
+    el.appendChild(t_area.el)
+
+
+    let t_btn = TButton.init('Apply Pattern', () => {
+      State.apply_pattern()
+    })
+    el.appendChild(t_btn.el)
+
     return new Section3(el)
   }
 
@@ -358,6 +450,32 @@ class TText {
 
   constructor(readonly el: Text) {}
 }
+
+
+class TTArea {
+
+  static init = (placeholder: string, txt: PullT<string>, push: (_: string) => void) => {
+    let el = document.createElement('textarea')
+
+    el.placeholder = placeholder
+
+    txt(on_update)
+
+    function on_update(txt: string) {
+      el.textContent = txt
+    }
+
+    el.addEventListener('input', debounce((_) => {
+      push(el.value)
+    }, 200))
+
+    return new TTArea(el)
+  }
+
+  constructor(readonly el: HTMLTextAreaElement) {}
+}
+
+
 
 class TTInput {
 
