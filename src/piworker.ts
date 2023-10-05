@@ -19,7 +19,7 @@ onmessage = (e: MessageEvent<WorkerMsg>) => {
     let fen = e.data.fen_moves.fen
     let pattern = e.data.fen_moves.pattern
 
-    postMessage({id, result: pi_pattern(fen, pattern) })
+    postMessage({id, result: `${pi_pattern(fen, pattern)}` })
   }
 
 

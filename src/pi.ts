@@ -54,10 +54,10 @@ class _Pi {
   }
 
 
-  async match_mate_pattern(fen: string, pattern: string) {
+  async match_mate_pattern(fen: string, pattern: string): Promise<boolean> {
     return new Promise(resolve => 
-      this.one_pull_pz_play_tuples((last_fen: string) => {
-        resolve(last_fen)
+      this.one_pull_pz_play_tuples((matched: string) => {
+        resolve(matched === 'true')
       }, { fen, pattern })
     )
   }

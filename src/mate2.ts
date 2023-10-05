@@ -15,11 +15,12 @@ type Pz = {
   blunder: string,
   moves: string[],
   tags: string
-
 }
 
+const cache_match_mate_pattern: { [key: string]: boolean } = {}
+
 const pz_last_fen = async (pz: Pz): Promise<string | undefined> => Pi.pz_last_fen(pz.fen, pz.blunder + ' ' + pz.moves.join(' '))
-const match_mate_pattern = async (fen: string, patt: string) => Pi.match_mate_pattern(fen, patt)
+const match_mate_pattern = async (fen: string, patt: string) => cache_match_mate_pattern[fen+patt] ?? Pi.match_mate_pattern(fen, patt).then(res => (cache_match_mate_pattern[fen+patt] = res))
 
 const parse_tenk = (tenk: string) => {
   let i = 0;
