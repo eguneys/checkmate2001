@@ -1,7 +1,7 @@
 import { INITIAL_FEN, Shess } from 'shess'
 import { debounce } from './util.ts'
 
-import { play_tuples, pattern as pi_pattern } from 'pichess24'
+import Pi from './pi.ts'
 
 const default_patterns: Pattern[] = [
   ['back', 'OoOoOoRnRnRnpopopo'],
@@ -18,9 +18,8 @@ type Pz = {
 
 }
 
-// TODO
-const pz_last_fen = (pz: Pz) => play_tuples(pz.fen, pz.blunder + ' ' + pz.moves.join(' '))
-const match_mate_pattern = (fen: string, patt: string) => pi_pattern(fen, patt)
+const pz_last_fen = async (pz: Pz): Promise<string | undefined> => Pi.pz_last_fen(pz.fen, pz.blunder + ' ' + pz.moves.join(' '))
+const match_mate_pattern = async (fen: string, patt: string) => Pi.match_mate_pattern(fen, patt)
 
 const parse_tenk = (tenk: string) => {
   let i = 0;
@@ -61,17 +60,19 @@ type PatternPz = {
 class PzManager {
 
   
-  static init = (pz: Pz[]) => {
+  static init = async (piz: Pz[]) => {
 
-    let ppz = pz.flatMap(pz => {
-      let last_fen = pz_last_fen(pz)
+    let ppz = await Promise.all(piz.map(pz => pz_last_fen(pz)))
+
+    let res: PatternPz[] = []
+
+    ppz.forEach((last_fen, i) => {
       if (last_fen) {
-        return { pz, last_fen, tags: [], builtin_tags: pz.tags.split(' ') }
-      } else {
-        return []
+        let pz = piz[i]
+        res.push({ pz, last_fen, tags: [], builtin_tags: pz.tags.split(' ') })
       }
     })
-    return new PzManager(ppz)
+    return new PzManager(res)
   }
 
   constructor(readonly pattern_pzs: PatternPz[]) {
@@ -79,14 +80,14 @@ class PzManager {
   }
 
 
-  private _apply_pattern(name: string, pattern: string) {
+  private async _apply_pattern(name: string, pattern: string) {
     pattern = [pattern.substring(0, 6), pattern.substring(6, 12), pattern.substring(12, 18)].join('\n')
-    this.pattern_pzs.forEach(ppz => {
-      if (match_mate_pattern(ppz.last_fen, pattern)) {
+    await Promise.all(this.pattern_pzs.map(async ppz => {
+      if (await match_mate_pattern(ppz.last_fen, pattern)) {
         ppz.tags = ppz.tags.filter(_ => _ !== name)
         ppz.tags.push(name)
       }
-    })
+    }))
     this.run_fpz_updates()
   }
 
@@ -263,7 +264,7 @@ class _StateManager {
   pz_updates: (() => void)[] = []
 
   async load() {
-    this.pz = PzManager.init(await load_tenk())
+    this.pz = await PzManager.init(await load_tenk())
     this.pz_updates.forEach(_ => _())
   }
 
@@ -388,14 +389,14 @@ class TPatternListItem {
     el.appendChild(s_name.el)
 
 
-    let s_y = TButton.init('S', (e) => {
+    let s_y = TButton.init('S', () => {
       State.pt.push_curr_pttrn(pt)
     })
     el.appendChild(s_y.el)
 
 
 
-    let s_x = TButton.init('X', (e) => {
+    let s_x = TButton.init('X', () => {
       State.pt.remove_pttrn(pt[0])
     })
     s_x.el.classList.add('red')
