@@ -17,9 +17,26 @@ jobs:
         id: pnpm-install
         with:
           version: 8.6.10
+
+      - name: Install Wasm
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      - name: Setup SSH
+        uses: MrSquaare/ssh-setup-action@v1
+        with:
+          host: github.com
+          private-key: ${{ secrets.PICHESS24_KEY }}
+          
         
+      - name: Build pichess24
+        run: |
+          git clone https://github.com/eguneys/pichess24
+          cd pichess24
+          wasm-pack build
+
       - name: Build
         run: |
+          pnpm install
           pnpm build
       
       - name: Deploy
