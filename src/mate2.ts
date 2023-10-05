@@ -3,6 +3,11 @@ import { debounce } from './util.ts'
 
 import { play_tuples, pattern as pi_pattern } from 'pichess24'
 
+const default_patterns: Pattern[] = [
+  ['back', 'OoOoOoRnRnRnpopopo'],
+  ['side', 'OoRnpoOoRnpoOoRnpo'],
+]
+
 type Pz = {
   i: number,
   id: string,
@@ -181,6 +186,18 @@ class PzManager {
 
 
 class PttrnManager {
+
+  remove_pttrn(name: string) {
+    this.pttrn_list = this.pttrn_list.filter(_ => _[0] != name)
+    this.pttrn_list_updates.forEach(_ => _())
+  }
+
+  push_curr_pttrn(pt: Pattern) {
+    this.curr_pttrn_name = pt[0]
+    this.curr_pttrn = pt[1]
+    this.curr_pttrn_updates.forEach(_ => _())
+  }
+
   add_pattern() {
     if (this.curr_pttrn_name.length > 2) {
       if (this.curr_pttrn.length == 18) {
@@ -193,7 +210,7 @@ class PttrnManager {
   curr_pttrn_name: string = ''
   curr_pttrn: string = ''
 
-  pttrn_list: Pattern[] = []
+  pttrn_list: Pattern[] = default_patterns
 
   pttrn_list_updates: (() => void) [] = []
   curr_pttrn_updates: (() => void) [] = []
@@ -364,10 +381,27 @@ type Pattern = [string, string]
 class TPatternListItem {
 
   static init = (pt: Pattern) => {
-    let el = document.createElement('div')
+    let el = document.createElement('li')
+    el.classList.add('pttrn')
 
     let s_name = TSpan.init(pt[0])
     el.appendChild(s_name.el)
+
+
+    let s_y = TButton.init('S', (e) => {
+      State.pt.push_curr_pttrn(pt)
+    })
+    el.appendChild(s_y.el)
+
+
+
+    let s_x = TButton.init('X', (e) => {
+      State.pt.remove_pttrn(pt[0])
+    })
+    s_x.el.classList.add('red')
+    el.appendChild(s_x.el)
+
+
 
     return new TPatternListItem(el)
   }
@@ -443,7 +477,7 @@ class THref {
 
 
 class TButton {
-  static init = (txt: string | PullT<string>, on_click: () => void) => {
+  static init = (txt: string | PullT<string>, on_click: (e: Event) => void) => {
 
     let el = document.createElement('button')
 
@@ -458,8 +492,8 @@ class TButton {
     }
 
 
-    el.addEventListener('click', () => {
-      on_click()
+    el.addEventListener('click', (e) => {
+      return on_click(e)
     })
 
     return new TButton(el)
@@ -549,7 +583,7 @@ class TTInput {
     txt(on_update)
 
     function on_update(txt: string) {
-      el.textContent = txt
+      el.value = txt
     }
 
     el.addEventListener('input', debounce((_) => {

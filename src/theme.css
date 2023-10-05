@@ -3,6 +3,51 @@
   margin: 0;
 }
 
+
+.v-wrap {
+  overflow-y: scroll;
+  height: 300px;
+}
+
+.v-wrap > ul {
+  list-style: none;
+  background: #cacacc;
+}
+
+
+.v-wrap > ul > li {
+  max-width: 100%;
+  word-wrap: break-word;
+  transition: background 0.1s;
+}
+
+.v-wrap > ul > li:nth-child(even) {
+  background: silver;
+}
+
+.v-wrap > ul > li:hover {
+  background: #ffffcc;
+}
+
+.v-wrap > ul > li:active {
+  background: lightseagreen;
+}
+
+.v-wrap > ul > li.selected {
+  background: gold;
+}
+
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+}
+
+
+
 checkmate2001 {
   display: flex;
   flex-flow: row nowrap;
@@ -14,7 +59,6 @@ checkmate2001 > section {
   border: 1px solid black;
   padding: 0.2em;
 }
-
 
 section.two {
   padding: 1em;
@@ -32,46 +76,7 @@ section.four {
 
 section.four .v-wrap {
   flex: 1;
-  overflow-y: scroll;
-  max-height: 300px;
 }
-
-section.four .v-wrap > ul {
-  background: #cacacc;
-}
-
-section.four .v-wrap > ul > li {
-  list-style: none;
-  max-width: 100%;
-  word-wrap: break-word;
-  transition: background 0.1s;
-}
-
-section.four .v-wrap > ul > li:nth-child(even) {
-  background: silver;
-}
-
-section.four .v-wrap > ul > li:hover {
-  background: #ffffcc;
-}
-
-section.four .v-wrap > ul > li:active {
-  background: lightseagreen;
-}
-
-section.four .v-wrap > ul > li.selected {
-  background: gold;
-}
-
-
-::-webkit-scrollbar {
-  width: 12px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #888;
-}
-
 
 
 li.pz {
@@ -105,4 +110,35 @@ section3 textarea {
   overflow: hidden;
   resize: none;
   align-self: center;
+}
+
+section3 .v-wrap > ul {
+  list-style: none;
+  background: #cacaca;
+}
+
+
+li.pttrn {
+  padding: 0.24em;
+  display: flex;
+  gap: 0.4em;
+  border: 1px solid black;
+  user-select: none;
+  cursor: pointer;
+}
+
+li.pttrn > span {
+  display: flex;
+  justify-content: flex-start;
+  flex: 1;
+  align-self: center;
+}
+
+li.pttrn > button {
+  padding: 0.3em 0.6em;
+}
+
+li.pttrn > button.red {
+  background: red;
+  color: white;
 }
