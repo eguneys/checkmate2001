@@ -168,12 +168,12 @@ class PzManager {
   push_pttrn(pattern: string) {
     this.pattern = pattern;
   }
-  pull_pttrn_name(cb: (name: string) => void) {
+  pull_pttrn_name(_cb: (name: string) => void) {
   }
   push_pttrn_name(name: string) {
     this.pattern_name = name;
   }
-  pull_pttrn(cb: (name: string) => void) {
+  pull_pttrn(_cb: (name: string) => void) {
   }
  
   

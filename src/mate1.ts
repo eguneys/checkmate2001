@@ -353,7 +353,7 @@ class Section3 {
     let e_select = TLabel.init('Select Pattern')
     el.appendChild(e_select.el)
 
-    let e_name = TTextInput.init('Pttrn Name', (name: string) => {
+    let e_name = TTextInput.init('Pttrn Name', (_name: string) => {
 
     })
 
