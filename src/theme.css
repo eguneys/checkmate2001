@@ -15,42 +15,51 @@ checkmate2001 > section {
   padding: 0.2em;
 }
 
+
+section.two {
+  padding: 1em;
+}
+
+section2 > .b-wrap {
+  display: flex;
+}
+
 section.four {
   display: flex;
   flex-flow: column;
 }
 
 
-section.four .poss-wrap {
+section.four .v-wrap {
   flex: 1;
   overflow-y: scroll;
   max-height: 300px;
 }
 
-section.four .poss-wrap > ul {
+section.four .v-wrap > ul {
   background: #cacacc;
 }
 
-section.four .poss-wrap > ul > li {
+section.four .v-wrap > ul > li {
   list-style: none;
   max-width: 100%;
   word-wrap: break-word;
   transition: background 0.1s;
 }
 
-section.four .poss-wrap > ul > li:nth-child(even) {
+section.four .v-wrap > ul > li:nth-child(even) {
   background: silver;
 }
 
-section.four .poss-wrap > ul > li:hover {
+section.four .v-wrap > ul > li:hover {
   background: #ffffcc;
 }
 
-section.four .poss-wrap > ul > li:active {
+section.four .v-wrap > ul > li:active {
   background: lightseagreen;
 }
 
-section.four .poss-wrap > ul > li.selected {
+section.four .v-wrap > ul > li.selected {
   background: gold;
 }
 
@@ -69,18 +78,19 @@ li.pz {
   display: flex;
   height: 100px;
   border: 1px solid darkblue;
+  user-select: none;
+  cursor: pointer;
 }
 
-li.pz > div {
-
+li.pz {
+  padding: 0.4em;
   display: flex;
-  overflow-y: scroll;
+  gap: 1em;
 }
 
-li.pz > div > ul {
+li.pz > span {
   display: flex;
   flex-flow: column;
-  list-style: none;
   font-size: 0.7em;
 }
 
