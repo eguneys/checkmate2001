@@ -30,7 +30,7 @@ jobs:
         
       - name: Build pichess24
         run: |
-          git clone https://github.com/eguneys/pichess24
+          git clone https://github.com/eguneys/pichess24.git
           cd pichess24
           wasm-pack build
 
