@@ -94,9 +94,9 @@ li.pz {
 }
 
 li.pz > span {
-  display: flex;
-  flex-flow: column;
   font-size: 0.7em;
+  overflow: hidden;
+  width: 100px;
 }
 
 section3 {

@@ -29,6 +29,10 @@ type Pz = {
   tags: string
 }
 
+
+const pzz_flip_fen = async (fens: string[]): Promise<string[]> => {
+  return await Pi.batch_pz_flip_fen(fens)
+}
 const pzz_last_fen = async (pzz: Pz[]): Promise<(string | undefined) []> => {
   let res = await Pi.batch_pz_last_fen(pzz.map(pz => ({ fen: pz.fen, moves: pz.blunder + ' ' + pz.moves.join(' ')})))
   return res.map(_ => _ === 'undefined' ? undefined : _)
@@ -68,6 +72,7 @@ const load_tenk = async () => {
 type PatternPz = {
   pz: Pz,
   last_fen: string,
+  flipped: string,
   tags: string[],
   builtin_tags: string[]
 }
@@ -78,15 +83,21 @@ class PzManager {
   static init = async (piz: Pz[]) => {
 
     let ppz = await pzz_last_fen(piz)
-
+    
     let res: PatternPz[] = []
-
     ppz.forEach((last_fen, i) => {
       if (last_fen) {
         let pz = piz[i]
-        res.push({ pz, last_fen, tags: [], builtin_tags: pz.tags.split(' ') })
+        res.push({ pz, flipped: '', last_fen, tags: [], builtin_tags: pz.tags.split(' ') })
       }
     })
+
+    let flips = await pzz_flip_fen(res.map(_ => _.last_fen))
+
+    flips.forEach((flipped, i) => {
+      res[i].flipped = flipped
+    })
+
     return new PzManager(res)
   }
 
@@ -105,10 +116,26 @@ class PzManager {
     let res = await batch_match_mate_pattern(
       this.pattern_pzs.map(ppz => ({ fen: ppz.last_fen, pattern })))
 
+    let res_flipped = await batch_match_mate_pattern(
+      this.pattern_pzs.map(ppz => ({ fen: ppz.flipped, pattern })))
+
+
+
     this.pattern_pzs.forEach((ppz, i) => {
       if (res[i]) {
         ppz.tags = ppz.tags.filter(_ => _ !== name)
         ppz.tags.push(name)
+        if (ppz.tags.length === 1) {
+          ppz.tags.unshift('has_tag')
+        }
+      }
+      let name_flipped = name + '_flipped'
+      if (res_flipped[i]) {
+        ppz.tags = ppz.tags.filter(_ => _ !== name_flipped)
+        ppz.tags.push(name_flipped)
+        if (ppz.tags.length === 1) {
+          ppz.tags.unshift('has_tag')
+        }
       }
     })
   }
@@ -176,6 +203,7 @@ class PzManager {
   push_filter(_: string) {
     this.filter = _
     this.run_fpz_updates()
+    this.f_updates.forEach(_ => _())
   }
 
   push_selected_pz(_: PatternPz) {
@@ -862,10 +890,19 @@ export default class Checkmate2002 {
      State.pt.push_pttrn_list(JSON.parse(load))
    }
 
+   // TODO
+   let lf = localStorage.getItem(`checkmate2002.filter`)
+   if (lf) {
+    State.push_pz_filter(lf)
+   }
+
    State.pt.pull_pttrn_list(pt => {
      localStorage.setItem(`checkmate2002.patterns`, JSON.stringify(pt))
    })
 
+   State.pull_pz_filter(filter => {
+    localStorage.setItem(`checkmate2002.filter`, filter)
+   })
 
   }
 }

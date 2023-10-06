@@ -5,6 +5,8 @@ export type NbTotal = { nb: number, total: number }
 export type FenMoves = { fen: string, moves: string }
 export type FenPattern = { fen: string, pattern: string }
 
+export type PostWork = { fen_flips?: string[], fen_moves?: FenMoves[], fen_patterns?: FenPattern[]}
+
 type WorkerCb = { id: string, result: string[] }
 
 let i = 1
@@ -44,33 +46,41 @@ class _Pi {
     })
   }
 
-  private one_pull_fen_moves_or_patterns(cb: (_: string[]) => void, fen_moves?: FenMoves[], fen_patterns?: FenPattern[]) {
+  private one_pull_fen_moves_or_patterns(cb: (_: string[]) => void, post_work: PostWork) {
     let id = gen_id()
 
     this.cbs.push({ id, cb })
     this.w.postMessage({
       id,
-      fen_moves,
-      fen_patterns
+      ...post_work
     })
 
     this.nb_queue_updates.forEach(_ => _())
+  }
+
+
+  async batch_pz_flip_fen(fen_flips: string[]): Promise<string[]> {
+    return new Promise(resolve => 
+      this.one_pull_fen_moves_or_patterns((fens: string[]) => {
+        resolve(fens)
+      }, { fen_flips })
+    )
   }
 
   async batch_pz_last_fen(fen_moves: FenMoves[]): Promise<string[]> {
     return new Promise(resolve => 
       this.one_pull_fen_moves_or_patterns((last_fens: string[]) => {
         resolve(last_fens)
-      }, fen_moves)
+      }, {fen_moves})
     )
   }
 
 
-  async batch_match_mate_pattern(fen_pattern: FenPattern[]): Promise<boolean[]> {
+  async batch_match_mate_pattern(fen_patterns: FenPattern[]): Promise<boolean[]> {
     return new Promise(resolve => 
       this.one_pull_fen_moves_or_patterns((matched: string[]) => {
         resolve(matched.map(_ => _ === 'true'))
-      }, undefined, fen_pattern)
+      }, {fen_patterns})
     )
   }
 
