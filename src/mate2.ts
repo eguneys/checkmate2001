@@ -17,7 +17,6 @@ const pull_map = <T, X>(pull: PullT<T>, map: (_: T) => X): PullT<X> => {
 
 const default_patterns: Pattern[] = [
   ['back', 'OoOoOoRnRnRnpopopo'],
-  ['side', 'OoRnpoOoRnpoOoRnpo'],
 ]
 
 type Pz = {
@@ -106,7 +105,7 @@ class PzManager {
   }
 
   async apply_patterns(pttrns: Pattern[]) {
-    pttrns.forEach(pttrn => this._apply_pattern_single(pttrn[0], pttrn[1]))
+    await Promise.all(pttrns.map(pttrn => this._apply_pattern_single(pttrn[0], pttrn[1])))
 
     this.run_fpz_updates()
   }
@@ -850,10 +849,6 @@ export default class Checkmate2002 {
     let sect3 = Section3.init()
     let sect4 = Section4.init()
 
-    let ss3 = document.createElement('section')
-    ss3.appendChild(sect3.el)
-    el.appendChild(ss3)
-
     let ss4 = document.createElement('section')
     ss4.appendChild(sect4.el)
     el.appendChild(ss4)
@@ -861,6 +856,11 @@ export default class Checkmate2002 {
     let ss2 = document.createElement('section')
     ss2.appendChild(sect2.el)
     el.appendChild(ss2)
+
+    let ss3 = document.createElement('section')
+    ss3.appendChild(sect3.el)
+    el.appendChild(ss3)
+
 
 
 
