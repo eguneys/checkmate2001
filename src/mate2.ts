@@ -2,8 +2,7 @@ import { INITIAL_FEN, Shess } from 'shess'
 import { debounce } from './util.ts'
 
 import Pi, { FenPattern } from './pi.ts'
-
-
+import { ofy, odify } from './chessy'
 
 const pull_map = <T, X>(pull: PullT<T>, map: (_: T) => X): PullT<X> => {
 
@@ -398,6 +397,19 @@ class Section2 {
 
     State.pull_select_pz(pz => {
       ss.fen(pz.last_fen)
+    })
+
+
+    ss.pull_arrows((a) => {
+
+      let arrows = a.arrows.map(_ => odify(_[0]).join(''))
+      let circles = a.circles.map(_ => ofy(_[0]))
+
+      console.log(arrows)
+
+
+
+
     })
 
     function on_init() {
@@ -849,10 +861,6 @@ export default class Checkmate2002 {
     let sect3 = Section3.init()
     let sect4 = Section4.init()
 
-    let ss4 = document.createElement('section')
-    ss4.appendChild(sect4.el)
-    el.appendChild(ss4)
-
     let ss2 = document.createElement('section')
     ss2.appendChild(sect2.el)
     el.appendChild(ss2)
@@ -861,7 +869,19 @@ export default class Checkmate2002 {
     ss3.appendChild(sect3.el)
     el.appendChild(ss3)
 
+    let ss4 = document.createElement('section')
+    ss4.appendChild(sect4.el)
+    el.appendChild(ss4)
 
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'q')  {
+        sect2.ss.clear()
+      }
+      if (e.key === 'e') {
+        sect2.ss.snap()
+      }
+    })
 
 
     ss2.classList.add('two')

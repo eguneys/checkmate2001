@@ -60,6 +60,10 @@ checkmate2001 > section {
   padding: 0.2em;
 }
 
+section.four {
+  flex: 0 0 200px;
+}
+
 section.two {
   padding: 1em;
 }
@@ -91,12 +95,11 @@ li.pz {
   padding: 0.4em;
   display: flex;
   gap: 1em;
+  max-width: 100%;
 }
 
 li.pz > span {
   font-size: 0.7em;
-  overflow: hidden;
-  word-wrap: break-word;
 }
 
 section3 {
