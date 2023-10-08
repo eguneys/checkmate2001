@@ -55,7 +55,7 @@ checkmate2001 {
 }
 
 checkmate2001 > section {
-  flex: 1 auto;
+  flex: 1;
   border: 1px solid black;
   padding: 0.2em;
 }
@@ -96,7 +96,7 @@ li.pz {
 li.pz > span {
   font-size: 0.7em;
   overflow: hidden;
-  width: 100px;
+  word-wrap: break-word;
 }
 
 section3 {

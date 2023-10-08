@@ -412,10 +412,10 @@ class Section2 {
 
     }
 
-    return new Section2(el)
+    return new Section2(el, ss)
   }
 
-  constructor(readonly el: HTMLElement) {}
+  constructor(readonly el: HTMLElement, readonly ss: Shess) {}
 }
 
 type Pattern = [string, string]
@@ -875,11 +875,14 @@ export default class Checkmate2002 {
     let e_s = TSpan.init(pull_map(Pi.pull_nb_queue, ({nb, total}) => `${nb}/${total}`))
     e_not.appendChild(e_s.el)
 
-    return new Checkmate2002(el)
+    return new Checkmate2002(el, sect2)
   }
 
-  constructor(readonly el: HTMLElement) {}
+  constructor(readonly el: HTMLElement, readonly section2: Section2) {}
 
+  on_mounted() {
+    this.section2.ss.init()
+  }
 
   load_puzzles() {
     State.load()

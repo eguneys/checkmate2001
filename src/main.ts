@@ -7,6 +7,8 @@ function app(el: HTMLElement) {
   let cc = Checkmate2002.init()
   el.appendChild(cc.el)
 
+  cc.on_mounted()
+
   cc.load_puzzles()
 
 }
