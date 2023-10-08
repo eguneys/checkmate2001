@@ -8,6 +8,20 @@ type WorkerMsg = {
   fen_patterns?: FenPattern[] 
 }
 
+const cache_fp = new Map<string, boolean>()
+const cache_pi_pattern = (fen: string, patt: string) => {
+
+  let key = fen+patt
+  if (cache_fp.has(key)) {
+    return cache_fp.get(key)!
+  }
+
+  let res = pi_pattern(fen, patt)
+
+  cache_fp.set(key, res)
+  return res
+}
+
 onmessage = (e: MessageEvent<WorkerMsg>) => {
   let id = e.data.id
 
@@ -22,7 +36,7 @@ onmessage = (e: MessageEvent<WorkerMsg>) => {
     postMessage({ id, result })
   } else if (e.data.fen_patterns) {
     let result = e.data.fen_patterns.map(({fen, pattern}) => {
-      return `${pi_pattern(fen, pattern)}`
+      return `${cache_pi_pattern(fen, pattern)}`
     })
     postMessage({ id, result })
   }

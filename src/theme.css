@@ -65,7 +65,7 @@ checkmate2001 > section {
 }
 
 section.four {
-  flex: 0 0 200px;
+  flex: 0 0 300px;
 }
 
 section.two {
@@ -104,6 +104,7 @@ li.pz {
 
 li.pz > span {
   font-size: 0.7em;
+  max-width: 100px;
 }
 
 section3 {
@@ -148,4 +149,15 @@ li.pttrn > button {
 li.pttrn > button.red {
   background: red;
   color: white;
+}
+
+
+notify {
+  position: fixed;
+  bottom: 0px;
+  right: 0px;
+  background: yellow;
+  border: 1px solid lime;
+  padding: 0.8em;
+  margin: 1em;
 }

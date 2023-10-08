@@ -664,7 +664,7 @@ class TTInput {
       el.value = txt
     }
 
-    el.addEventListener('input', debounce((_) => {
+    el.addEventListener('input', debounce((_: Event) => {
       push(el.value)
     }, 200))
 
@@ -898,7 +898,10 @@ export default class Checkmate2002 {
     el.appendChild(ss4)
 
 
-    document.addEventListener('keydown', e => {
+    document.addEventListener('keydown', (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement).tagName === 'INPUT') {
+        return
+      }
       if (e.key === 'q')  {
         sect2.ss.clear()
       }
@@ -913,7 +916,7 @@ export default class Checkmate2002 {
     ss4.classList.add('four')
 
 
-    let e_not = document.createElement('div')
+    let e_not = document.createElement('notify')
     el.appendChild(e_not)
 
     let e_s = TSpan.init(pull_map(Pi.pull_nb_queue, ({nb, total}) => `${nb}/${total}`))
