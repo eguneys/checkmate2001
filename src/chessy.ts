@@ -7,7 +7,8 @@ export const odify = ([x, y, x2, y2]: XYXY2) => [ofy([x, y]), ofy([x2, y2])]
 const hl = [8,7,6,5,4,3,2,1]
 const lh = [1,2,3,4,5,6,7,8]
 
-export const patternify = (fen: string, arrows: string[], circles: string[]) => {
+
+const read_fen = (fen: string) => {
   let pieces = new Map<string, string>()
   fen = fen.split(' ')[0]
 
@@ -26,6 +27,57 @@ export const patternify = (fen: string, arrows: string[], circles: string[]) => 
       }
     }
   })
+
+  return pieces
+
+}
+
+const write_fen = (pieces: Map<string, string>): string => {
+  let res: string[] = []
+  hl.map(r => {
+    let l = ''
+    let s = 0
+    lh.map((f) => {
+      let o = ofy([f- 1, r -1 ])
+      if (pieces.has(o)) {
+        let c = pieces.get(o)
+
+        let spaces = s === 0 ? '': `${s}`
+
+        l += spaces + c
+        s = 0
+      } else {
+        s++;
+      }
+    })
+    res.push(l)
+  })
+  return res.join('/')
+}
+
+export const flip_colors = (fen: string) => {
+  let [_, ...rest] = fen.split(' ')
+  let pieces = read_fen(fen)
+
+
+  let flipped = new Map<string, string>()
+
+
+  for (let [pos, piece] of pieces) {
+    if ("rnbkqp".includes(piece)) {
+      piece = piece.toUpperCase()
+    } else {
+      piece = piece.toLowerCase()
+    }
+    flipped.set(pos, piece)
+  }
+
+  return write_fen(flipped) + ' ' + rest.join(' ')
+}
+
+export const patternify = (fen: string, arrows: string[], circles: string[]) => {
+
+  let pieces = read_fen(fen)
 
   let bk
   for (let [pos, ch] of pieces) {
@@ -66,6 +118,9 @@ export const patternify = (fen: string, arrows: string[], circles: string[]) => 
           if (P === 'p' || P === 'P') {
             return `${P}c`
           }
+          if (P === 'n' || P === 'N') {
+            return `${P}a`
+          }
 
           return `${P}${an}`
         }
@@ -83,6 +138,14 @@ const ranks = '12345678'.split('')
 const irank: { [key: string]: number } = { 
   'a': 0, 'b': 1, 'c': 2, 'd': 3, 'e': 4, 'f': 5, 'g': 6, 'h': 7, 
   '1': 0, '2': 1, '3': 2, '4': 3, '5': 4, '6': 5, '7': 6, '8': 7 }
+
+export const flip_pos = (pos: string) => {
+
+  let f = irank[pos[0]]
+  let r = 7 - irank[pos[1]]
+
+  return files[f] + ranks[r]
+}
 
 export const a_or_n = (o: string, d: string) => {
   let res = go_kings_numpad(o)

@@ -2,7 +2,7 @@ import { INITIAL_FEN, Shess } from 'shess'
 import { debounce } from './util.ts'
 
 import Pi, { FenPattern } from './pi.ts'
-import { ofy, odify, patternify } from './chessy'
+import { ofy, odify, patternify, flip_colors } from './chessy'
 
 const pull_map = <T, X>(pull: PullT<T>, map: (_: T) => X): PullT<X> => {
 
@@ -432,6 +432,10 @@ class Section2 {
 
     function on_fcolors() {
 
+      if (last_fen) {
+        last_fen = flip_colors(last_fen)
+        ss.fen(last_fen)
+      }
     }
 
     return new Section2(el, ss)
