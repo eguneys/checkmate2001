@@ -1,8 +1,6 @@
 type XYXY2 = [number, number, number, number]
 type XY = [number, number]
 
-const files = 'abcdefgh'.split('')
-const ranks = '12345678'.split('')
 export const ofy = ([fi, ri]: XY) => `${files[fi]}${ranks[ri]}`
 export const odify = ([x, y, x2, y2]: XYXY2) => [ofy([x, y]), ofy([x2, y2])]
 
@@ -10,8 +8,6 @@ const hl = [8,7,6,5,4,3,2,1]
 const lh = [1,2,3,4,5,6,7,8]
 
 export const patternify = (fen: string, arrows: string[], circles: string[]) => {
-  let res = []
-
   let pieces = new Map<string, string>()
   fen = fen.split(' ')[0]
 
@@ -42,14 +38,122 @@ export const patternify = (fen: string, arrows: string[], circles: string[]) => 
     return undefined
   }
 
-  arrows.flatMap(od => {
-    let o = od.slice(0, 2)
-    let d = od.slice(2, 4)
+  let bk_pad = go_kings_numpad(bk)
 
-    if (pieces.has(o)) {
-
+  let res = bk_pad.map((p, i) => {
+    if (!p) {
+      return 'Oo'
     }
 
+    for (let o of circles) {
+      if (p === o) {
+        if (pieces.has(o)) {
+          let P = pieces.get(o)!
+          return `${P}o`
+        }
+      }
+    }
+
+    for (let od of arrows) {
+      let o = od.slice(0, 2)
+      let d = od.slice(2, 4)
+
+      let an = a_or_n(o, d)
+
+      if (pieces.has(o)) {
+        if (d === p) {
+          let P = pieces.get(o)!
+          if (P === 'p' || P === 'P') {
+            return `${P}c`
+          }
+
+          return `${P}${an}`
+        }
+      }
+    }
+
+    return 'Xx'
   })
 
+  return res.join('')
+}
+
+const files = 'abcdefgh'.split('')
+const ranks = '12345678'.split('')
+const irank: { [key: string]: number } = { 
+  'a': 0, 'b': 1, 'c': 2, 'd': 3, 'e': 4, 'f': 5, 'g': 6, 'h': 7, 
+  '1': 0, '2': 1, '3': 2, '4': 3, '5': 4, '6': 5, '7': 6, '8': 7 }
+
+export const a_or_n = (o: string, d: string) => {
+  let res = go_kings_numpad(o)
+  if (res.find(_ => _ === d)) {
+    return 'a'
+  } else {
+    return 'n'
+  }
+}
+
+export const go_kings_numpad = (pos: string) => {
+  return [
+    go_black_queen(pos), go_black(pos), go_black_king(pos),
+    go_queen(pos), pos, go_king(pos),
+    go_white_queen(pos), go_white(pos), go_white_king(pos),
+  ]
+}
+
+
+export const go_black_king = (pos: string) => {
+  let w = go_black(pos)
+  if (w) { return go_king(w) }
+}
+
+export const go_black_queen = (pos: string) => {
+  let w = go_black(pos)
+  if (w) { return go_queen(w) }
+}
+
+
+
+export const go_white_queen = (pos: string) => {
+  let w = go_white(pos)
+  if (w) { return go_queen(w) }
+}
+
+
+
+export const go_white_king = (pos: string) => {
+  let w = go_white(pos)
+  if (w) { return go_king(w) }
+}
+
+export const go_white = (pos: string) => {
+  let l = irank[pos[1]] - 1
+
+  if (ranks[l]) {
+    return pos[0] + ranks[l]
+  }
+}
+
+export const go_black = (pos: string) => {
+  let l = irank[pos[1]] + 1
+
+  if (ranks[l]) {
+    return pos[0] + ranks[l]
+  }
+}
+
+export const go_queen = (pos: string) => {
+  let l = irank[pos[0]] - 1
+
+  if (files[l]) {
+    return files[l] + pos[1]
+  }
+}
+
+export const go_king = (pos: string) => {
+  let l = irank[pos[0]] + 1
+
+  if (files[l]) {
+    return files[l] + pos[1]
+  }
 }

@@ -417,7 +417,7 @@ class Section2 {
         let pt = patternify(last_fen, arrows, circles)
 
         if (pt) {
-          console.log(pt)
+          State.pt.push_pttrn_pttrn(pt)
         }
       }
     })
