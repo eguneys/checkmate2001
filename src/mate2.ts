@@ -2,7 +2,7 @@ import { INITIAL_FEN, Shess } from 'shess'
 import { debounce } from './util.ts'
 
 import Pi, { FenPattern } from './pi.ts'
-import { ofy, odify } from './chessy'
+import { ofy, odify, patternify } from './chessy'
 
 const pull_map = <T, X>(pull: PullT<T>, map: (_: T) => X): PullT<X> => {
 
@@ -219,6 +219,12 @@ class PttrnManager {
       this.add_given_pttrn(ptt)
     })
   }
+
+
+  remove_curr_pttrn() {
+    this.remove_pttrn(this.curr_pttrn_name)
+    this.push_curr_pttrn(['', ''])
+  }
   
   remove_pttrn(name: string) {
     this.pttrn_list = this.pttrn_list.filter(_ => _[0] != name)
@@ -395,7 +401,9 @@ class Section2 {
     let ss = Shess.init()
     el.appendChild(ss.el)
 
+    let last_fen: string | undefined
     State.pull_select_pz(pz => {
+      last_fen = pz.last_fen
       ss.fen(pz.last_fen)
     })
 
@@ -405,11 +413,13 @@ class Section2 {
       let arrows = a.arrows.map(_ => odify(_[0]).join(''))
       let circles = a.circles.map(_ => ofy(_[0]))
 
-      console.log(arrows)
+      if (last_fen) {
+        let pt = patternify(last_fen, arrows, circles)
 
-
-
-
+        if (pt) {
+          console.log(pt)
+        }
+      }
     })
 
     function on_init() {
@@ -449,11 +459,13 @@ class TPatternListItem {
 
 
 
+    /*
     let s_x = TButton.init('X', () => {
       State.pt.remove_pttrn(pt[0])
     })
     s_x.el.classList.add('red')
     el.appendChild(s_x.el)
+    */
 
 
 
@@ -468,6 +480,16 @@ class Section3 {
   static init = () => {
 
     let el = document.createElement('section3')
+
+
+
+    let p_list = TPageList.init(State.pt.pull_pttrn_list, pttrn => {
+      let _ = TPatternListItem.init(pttrn)
+      return _.el
+    })
+    el.appendChild(p_list.el)
+
+
 
 
     let t_name = TTInput.init('Pttrn Name', State.pt.pull_curr_pttrn_name, State.pt.push_pttrn_name)
@@ -485,14 +507,12 @@ class Section3 {
     })
     el.appendChild(t_btn.el)
 
-
-
-    let p_list = TPageList.init(State.pt.pull_pttrn_list, pttrn => {
-      let _ = TPatternListItem.init(pttrn)
-      return _.el
+    let t_rmv = TButton.init('Delete', () => {
+      State.pt.remove_curr_pttrn()
     })
+    t_rmv.el.classList.add('red')
+    el.appendChild(t_rmv.el)
 
-    el.appendChild(p_list.el)
 
 
     return new Section3(el)
