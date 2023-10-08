@@ -92,7 +92,7 @@ export const patternify = (fen: string, arrows: string[], circles: string[]) => 
 
   let bk_pad = go_kings_numpad(bk)
 
-  let res = bk_pad.map((p, i) => {
+  let res = bk_pad.map(p => {
     if (!p) {
       return 'Oo'
     }
